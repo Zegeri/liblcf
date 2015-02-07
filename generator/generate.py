@@ -5,11 +5,14 @@ from __future__ import division
 import sys
 import os
 import re
+import shutil
+import filecmp
 
 csv_dir = 'csv'
 tmpl_dir = 'templates'
 srcdir = '../src/generated'
 hdrdir = '../src/generated'
+tmpdir = '../src/generated/tmp'
 
 class Template(object):
     def __init__(self, filename):
@@ -386,20 +389,20 @@ def generate_struct(filetype, filename, struct_name, hasid):
         structupper = struct_name.upper(),
         idtype = ['NoID','WithID'][hasid])
 
-    filepath = os.path.join(srcdir, '%s_%s.cpp' % (filetype, filename))
+    filepath = os.path.join(tmpdir, '%s_%s.cpp' % (filetype, filename))
     with open(filepath, 'w') as f:
         generate_reader(f, struct_name, vars)
 
     if needs_ctor(struct_name, hasid):
-        filepath = os.path.join(srcdir, 'rpg_%s.cpp' % filename)
+        filepath = os.path.join(tmpdir, 'rpg_%s.cpp' % filename)
         with open(filepath, 'w') as f:
             generate_ctor(f, struct_name, hasid, vars)
 
-    filepath = os.path.join(hdrdir, 'rpg_%s.h' % filename)
+    filepath = os.path.join(tmpdir, 'rpg_%s.h' % filename)
     with open(filepath, 'w') as f:
         generate_header(f, struct_name, hasid, vars)
 
-    filepath = os.path.join(hdrdir, '%s_chunks.h' % filetype)
+    filepath = os.path.join(tmpdir, '%s_chunks.h' % filetype)
     with open(filepath, 'a') as f:
         generate_chunks(f, struct_name, vars)
 
@@ -410,11 +413,11 @@ def generate_rawstruct(filename, struct_name):
         structupper = struct_name.upper())
 
     if needs_ctor(struct_name, False):
-        filepath = os.path.join(srcdir, 'rpg_%s.cpp' % filename)
+        filepath = os.path.join(tmpdir, 'rpg_%s.cpp' % filename)
         with open(filepath, 'w') as f:
             generate_ctor(f, struct_name, False, vars)
 
-    filepath = os.path.join(hdrdir, 'rpg_%s.h' % filename)
+    filepath = os.path.join(tmpdir, 'rpg_%s.h' % filename)
     with open(filepath, 'w') as f:
         generate_header(f, struct_name, False, vars)
 
@@ -430,7 +433,7 @@ def generate_flags(filetype, filename, struct_name):
         maxsize = maxsize
         )
 
-    filepath = os.path.join(srcdir, '%s_%s_flags.cpp' % (filetype, filename))
+    filepath = os.path.join(tmpdir, '%s_%s_flags.cpp' % (filetype, filename))
     with open(filepath, 'w') as f:
         f.write(copy.header)
         f.write(freader.header % vars)
@@ -452,7 +455,7 @@ def generate():
         vars = dict(
             filetype = filetype,
             typeupper = filetype.upper())
-        filepath = os.path.join(hdrdir, '%s_chunks.h' % filetype)
+        filepath = os.path.join(tmpdir, '%s_chunks.h' % filetype)
         with open(filepath, 'w') as f:
             f.write(copy.header)
             f.write(chunk.file_header % vars)
@@ -466,9 +469,20 @@ def generate():
             generate_flags(filetype, filename, struct_name)
 
     for filetype in ['ldb','lmt','lmu','lsd']:
-        filepath = os.path.join(hdrdir, '%s_chunks.h' % filetype)
+        filepath = os.path.join(tmpdir, '%s_chunks.h' % filetype)
         with open(filepath, 'a') as f:
             f.write(chunk.file_footer)
+
+    for tmpfile in os.listdir(tmpdir):
+        tmppath = os.path.join(tmpdir, tmpfile)
+        if (os.path.splitext(tmpfile)[1] == '.h'):
+            dstpath = os.path.join(hdrdir, tmpfile)
+        else:
+            dstpath = os.path.join(srcdir, tmpfile)
+        if not (os.path.exists(dstpath) and filecmp.cmp(tmppath, dstpath)):
+            shutil.copyfile(tmppath, dstpath)
+        os.remove(tmppath)
+    os.rmdir(tmpdir)
 
 def list_files_struct(filetype, filename, struct_name, hasid):
     if struct_name not in sfields:
@@ -504,6 +518,9 @@ def main(argv):
 
     if not os.path.exists(hdrdir):
         os.mkdir(hdrdir)
+
+    if not os.path.exists(tmpdir):
+        os.mkdir(tmpdir)
 
     global structs, sfields, enums, efields, flags, setup, headers
 

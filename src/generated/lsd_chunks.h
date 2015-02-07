@@ -303,7 +303,7 @@ namespace LSD_Reader {
 			anim_frame					= 0x17,
 			/** 0 or 3 - Transparency level of the main party member */
 			transparency				= 0x18,
-			/** Remaining distance of the current move (from 0 to 256) */
+			/** From 0 to 255 - Remaining distance of the current move */
 			remaining_step				= 0x1F,
 			/** ? */
 			move_frequency				= 0x20,
@@ -417,7 +417,7 @@ namespace LSD_Reader {
 			anim_frame					= 0x17,
 			/** always 0 */
 			transparency				= 0x18,
-			/** Remaining distance of the current move (from 0 to 256) */
+			/** From 0 to 255 - Remaining distance of the current move */
 			remaining_step				= 0x1F,
 			/** ? */
 			move_frequency				= 0x20,
@@ -663,7 +663,7 @@ namespace LSD_Reader {
 			anim_frame					= 0x17,
 			/** 0 or 3 - Transparency level of the current event page */
 			transparency				= 0x18,
-			/** Remaining distance of the current move (from 0 to 256) */
+			/** From 0 to 255 - Remaining distance of the current move */
 			remaining_step				= 0x1F,
 			/** ? */
 			move_frequency				= 0x20,
